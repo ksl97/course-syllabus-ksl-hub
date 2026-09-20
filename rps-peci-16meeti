@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPS Interaktif - Pengolahan Citra Digital (PBL)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 250px;
+            max-height: 280px;
+        }
+        .tab-btn.active {
+            border-bottom-color: #4f46e5;
+            color: #4f46e5;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col justify-between antialiased">
+
+<!-- Chosen Palette: Clean Light Slate & Indigo Academic Palette -->
+<!-- Application Structure Plan: Single-page interactive RPS (Rencana Pembelajaran Semester) application for Pengolahan Citra Digital (PCD). Features responsive navigation, complete course metadata, detailed weekly breakdown (P1-P16) with interactive filters (Phase, CPMK, Topic Search), Project-Based Learning (PBL) Alignment Map, Chart.js Grading Breakdown & Weekly Workload, interactive Grade Simulator, and RPS Export Tool. Designed with a light background for clear reading and academic presentation. -->
+<!-- Visualization & Content Choices: Chart.js Donut chart for Assessment Breakdown; Chart.js Bar chart for Weekly Workload distribution; Custom HTML/Tailwind cards for weekly syllabus items; Dynamic JS filtering & search. Confirming NO SVG and NO Mermaid JS used. -->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+<!-- Header & Navigation -->
+<header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-extrabold text-lg shadow-md shadow-indigo-200">
+                    PCD
+                </div>
+                <div>
+                    <h1 class="text-base font-bold text-slate-900 leading-tight">Rencana Pembelajaran Semester (RPS)</h1>
+                    <p class="text-xs text-indigo-600 font-semibold">Pengolahan Citra Digital • 3 SKS (1 Teori, 2 Praktikum)</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="openExportModal()" class="px-3.5 py-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 transition flex items-center gap-2">
+                    <i class="fa-solid fa-file-export"></i>
+                    <span class="hidden sm:inline">Ekspor Teks RPS</span>
+                </button>
+                <button onclick="scrollToSection('kalkulator')" class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition flex items-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-calculator"></i>
+                    <span class="hidden sm:inline">Simulasi Nilai</span>
+                </button>
+            </div>
+        </div>
+        <!-- Navigation Tabs -->
+        <div class="flex space-x-6 border-t border-slate-100 text-xs font-medium text-slate-500 overflow-x-auto no-scrollbar">
+            <button onclick="switchTab('ringkasan')" id="tab-ringkasan" class="tab-btn active py-3 border-b-2 border-transparent hover:text-indigo-600 whitespace-nowrap">
+                <i class="fa-solid fa-circle-info mr-1.5"></i> Ringkasan & CPMK
+            </button>
+            <button onclick="switchTab('matriks')" id="tab-matriks" class="tab-btn py-3 border-b-2 border-transparent hover:text-indigo-600 whitespace-nowrap">
+                <i class="fa-solid fa-calendar-days mr-1.5"></i> Matriks Pertemuan (P1 - P16)
+            </button>
+            <button onclick="switchTab('pbl-map')" id="tab-pbl-map" class="tab-btn py-3 border-b-2 border-transparent hover:text-indigo-600 whitespace-nowrap">
+                <i class="fa-solid fa-diagram-project mr-1.5"></i> Alignment Tugas & Proyek PBL
+            </button>
+            <button onclick="switchTab('asesmen')" id="tab-asesmen" class="tab-btn py-3 border-b-2 border-transparent hover:text-indigo-600 whitespace-nowrap">
+                <i class="fa-solid fa-chart-pie mr-1.5"></i> Skema Penilaian & Beban Belajar
+            </button>
+        </div>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+
+    <!-- SECTION 1: RINGKASAN & CPMK -->
+    <section id="sec-ringkasan" class="space-y-8">
+        <!-- Banner Intro -->
+        <div class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+            <div class="max-w-3xl relative z-10 space-y-3">
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/30 text-indigo-200 border border-indigo-400/30">
+                    Kurikulum Berbasis OBE & Project-Based Learning (PBL)
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">RPS Pengolahan Citra Digital</h2>
+                <p class="text-xs sm:text-sm text-indigo-100 leading-relaxed">
+                    Mata kuliah ini membekali mahasiswa dengan kemampuan memahami, menganalisis, dan mengimplementasikan teknik pengolahan citra digital mulai dari representasi matriks piksel, preprocessing, ekstraksi fitur (warna, bentuk, tekstur), hingga klasifikasi citra cerdas berbasis Machine Learning (KNN/SVM) untuk menyelesaikan permasalahan di dunia nyata.
+                </p>
+                <div class="pt-2 flex flex-wrap gap-4 text-xs font-medium text-indigo-200">
+                    <div class="flex items-center gap-1.5"><i class="fa-regular fa-user text-indigo-400"></i> Pengampu: Karunia Suci Lestari, M.Kom</div>
+                    <div class="flex items-center gap-1.5"><i class="fa-solid fa-graduation-cap text-indigo-400"></i> Rumpun: Informatika / Computer Science</div>
+                    <div class="flex items-center gap-1.5"><i class="fa-solid fa-code text-indigo-400"></i> Tech Stack: Python, OpenCV, NumPy, Matplotlib, Scikit-Learn</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Meta Info Cards Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div class="text-xs font-semibold text-slate-500 mb-1">Bobot SKS</div>
+                <div class="text-xl font-bold text-slate-900">3 SKS</div>
+                <div class="text-[11px] text-indigo-600 mt-1">1 SKS Teori + 2 SKS Praktikum</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div class="text-xs font-semibold text-slate-500 mb-1">Prasyarat</div>
+                <div class="text-xl font-bold text-slate-900">Pemrograman</div>
+                <div class="text-[11px] text-slate-500 mt-1">Python Dasar & Aljabar Matriks</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div class="text-xs font-semibold text-slate-500 mb-1">Metode Utama</div>
+                <div class="text-xl font-bold text-slate-900">PBL & Lab</div>
+                <div class="text-[11px] text-emerald-600 mt-1">Studi Kasus & Live Defense</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div class="text-xs font-semibold text-slate-500 mb-1">Total Pertemuan</div>
+                <div class="text-xl font-bold text-slate-900">16 Minggu</div>
+                <div class="text-[11px] text-slate-500 mt-1">14 Kuliah + UTS (P8) + UAS (P16)</div>
+            </div>
+        </div>
+
+        <!-- CPMK Matrix -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <i class="fa-solid fa-bullseye text-indigo-600"></i>
+                Capaian Pembelajaran Mata Kuliah (CPMK)
+            </h3>
+            <p class="text-xs text-slate-600">
+                Berikut adalah 5 indikator utama capaian pembelajaran yang harus dikuasai oleh mahasiswa pada akhir semester:
+            </p>
+            <div class="grid md:grid-cols-2 gap-4 pt-2">
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700">CPMK 1</span>
+                        <span class="text-[10px] text-slate-400">Taksonomi Bloom: C2 (Pemahaman)</span>
+                    </div>
+                    <h4 class="text-xs font-bold text-slate-800">Konsep Visual Computing & Matriks Piksel</h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Memahami prinsip dasar citra digital, spektrum visual computing, matriks intensitas 2D, serta ruang warna (RGB, Grayscale, HSV).
+                    </p>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-700">CPMK 2</span>
+                        <span class="text-[10px] text-slate-400">Taksonomi Bloom: C3 (Penerapan)</span>
+                    </div>
+                    <h4 class="text-xs font-bold text-slate-800">Preprocessing & Perbaikan Kualitas Citra</h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Menguasai teknik kontras (Histogram Equalization), spatial filtering (smoothing/sharpening), dan deteksi tepi (Canny/Sobel).
+                    </p>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">CPMK 3</span>
+                        <span class="text-[10px] text-slate-400">Taksonomi Bloom: C4 (Analisis)</span>
+                    </div>
+                    <h4 class="text-xs font-bold text-slate-800">Segmentasi Citra & Ekstraksi Fitur</h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Menerapkan thresholding Otsu, operasi morfologi, serta ekstraksi fitur warna (HSV), bentuk (contours), dan tekstur (GLCM).
+                    </p>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">CPMK 4</span>
+                        <span class="text-[10px] text-slate-400">Taksonomi Bloom: C5 (Evaluasi)</span>
+                    </div>
+                    <h4 class="text-xs font-bold text-slate-800">Klasifikasi Machine Learning & Evaluasi</h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Membangun model klasifikasi citra dengan KNN & SVM, mengevaluasi perfomansi menggunakan Confusion Matrix (Accuracy, Precision, Recall).
+                    </p>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 md:col-span-2">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700">CPMK 5</span>
+                        <span class="text-[10px] text-slate-400">Taksonomi Bloom: A3 & A4 (Sikap & Kerjasama)</span>
+                    </div>
+                    <h4 class="text-xs font-bold text-slate-800">Pengembangan Proyek Kelompok & Komunikasi Ilmiah</h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Bekerja sama dalam tim untuk menyelesaikan permasalahan riil pengolahan citra, mendokumentasikan kode dalam repositori, serta menyusun laporan makalah ilmiah dan mempresentasikannya pada sesi Live Defense.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2: MATRIKS PERTEMUAN (P1 - P16) -->
+    <section id="sec-matriks" class="space-y-6 hidden">
+        <!-- Controls & Filters Bar -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">Matriks Perancangan Pembelajaran 16 Minggu</h3>
+                    <p class="text-xs text-slate-500">Gunakan filter atau pencarian untuk menjelajahi detail materi dan praktikum mingguan.</p>
+                </div>
+                <!-- Search Box -->
+                <div class="relative w-full md:w-72">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+                    <input type="text" id="search-input" onkeyup="filterWeeks()" placeholder="Cari materi, topik, atau fungsi..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-500 bg-slate-50">
+                </div>
+            </div>
+            <!-- Phase Filter Badges -->
+            <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs">
+                <span class="text-slate-500 font-semibold mr-1">Filter Fase:</span>
+                <button onclick="setPhaseFilter('all')" class="phase-btn px-3 py-1 rounded-full bg-indigo-600 text-white font-medium shadow-sm" data-phase="all">Semua (P1-P16)</button>
+                <button onclick="setPhaseFilter('fase1')" class="phase-btn px-3 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium" data-phase="fase1">Fase 1: Acquisition & Preprocessing (P1-P3)</button>
+                <button onclick="setPhaseFilter('fase2')" class="phase-btn px-3 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium" data-phase="fase2">Fase 2: Segmentation & Feature (P4-P7)</button>
+                <button onclick="setPhaseFilter('uts')" class="phase-btn px-3 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium" data-phase="uts">P8: UTS / Defense 1</button>
+                <button onclick="setPhaseFilter('fase3')" class="phase-btn px-3 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium" data-phase="fase3">Fase 3: ML & Evaluation (P9-P13)</button>
+                <button onclick="setPhaseFilter('fase4')" class="phase-btn px-3 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium" data-phase="fase4">Fase 4: Integration & Defense (P14-P16)</button>
+            </div>
+        </div>
+
+        <!-- Weekly Cards List -->
+        <div id="weeks-container" class="space-y-4">
+            <!-- Dynamic Injection by JS -->
+        </div>
+    </section>
+
+    <!-- SECTION 3: ALIGNMENT TUGAS & PROYEK PBL -->
+    <section id="sec-pbl-map" class="space-y-6 hidden">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <i class="fa-solid fa-diagram-project text-indigo-600"></i>
+                Peta Alur Proyek Kelompok (Project-Based Learning Flow)
+            </h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+                Jawaban atas pertanyaan: <strong>"Apakah tugas disesuaikan dengan RPS?"</strong> Ya, skema Project-Based Learning pada mata kuliah ini dirancang dengan prinsip <em>Constructive Alignment</em>. Setiap milestone tugas mingguan merupakan eksekusi langsung dari pokok bahasan RPS di minggu tersebut, sehingga mahasiswa tidak terbeban tugas terpisah di luar capaian RPS.
+            </p>
+
+            <div class="grid md:grid-cols-3 gap-6 pt-4">
+                <!-- Phase 1 -->
+                <div class="bg-indigo-50/50 border border-indigo-200 rounded-xl p-5 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-600 text-white">MILESTONE 1 (P1-P3)</span>
+                        <span class="text-[10px] font-semibold text-indigo-700">Tugas Awal</span>
+                    </div>
+                    <h4 class="text-sm font-bold text-indigo-950">Data Acquisition & Preprocessing Pipeline</h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Mahasiswa membentuk kelompok (3-4 orang), memilih domain (medis, pertanian, biometrik, otomotif), mengumpulkan 50-100 citra per kelas, dan membangun script konversi warna BGR-RGB-HSV serta noise filtering.
+                    </p>
+                    <div class="pt-2 border-t border-indigo-200/60 text-[11px] text-indigo-800">
+                        <strong>Output Deliverable:</strong> Google Colab Notebook (Dataset Raw & Cleaned)
+                    </div>
+                </div>
+
+                <!-- Phase 2 -->
+                <div class="bg-sky-50/50 border border-sky-200 rounded-xl p-5 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-sky-600 text-white">MILESTONE 2 (P4-P7)</span>
+                        <span class="text-[10px] font-semibold text-sky-700">Tugas Tengah</span>
+                    </div>
+                    <h4 class="text-sm font-bold text-sky-950">Segmentation & Multi-Feature Matrix Extraction</h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Mengaplikasikan thresholding Otsu/HSV, mengekstrak fitur Warna (mean/std HSV), Bentuk (area/perimeter), dan Tekstur (GLCM), kemudian menyimpannya ke format CSV/Dataframe.
+                    </p>
+                    <div class="pt-2 border-t border-sky-200/60 text-[11px] text-sky-800">
+                        <strong>Output Deliverable:</strong> Feature Dataset CSV & Mid-Term Presentation (P8 UTS)
+                    </div>
+                </div>
+
+                <!-- Phase 3 -->
+                <div class="bg-emerald-50/50 border border-emerald-200 rounded-xl p-5 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-600 text-white">MILESTONE 3 (P9-P16)</span>
+                        <span class="text-[10px] font-semibold text-emerald-700">Tugas Akhir</span>
+                    </div>
+                    <h4 class="text-sm font-bold text-emerald-950">Machine Learning Model & Final Live Defense</h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Melatih model KNN & SVM, melakukan tuning hyperparameter, mengukur performa dengan Confusion Matrix, menyusun laporan paper IEEE 4 halaman, dan mengikuti ujian lisan kelompok.
+                    </p>
+                    <div class="pt-2 border-t border-emerald-200/60 text-[11px] text-emerald-800">
+                        <strong>Output Deliverable:</strong> Paper Laporan Akhir, App Demo & Live Defense (P16 UAS)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mapping Table -->
+            <div class="pt-4 overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse border border-slate-200">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                            <th class="p-3 border-r border-slate-200">Minggu</th>
+                            <th class="p-3 border-r border-slate-200">Materi Pokok RPS</th>
+                            <th class="p-3 border-r border-slate-200">Praktikum Colab / Lab</th>
+                            <th class="p-3">Tugas Kelompok Proyek (Milestone Alignment)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 text-slate-600">
+                        <tr>
+                            <td class="p-3 font-semibold text-indigo-600 border-r border-slate-200">P1</td>
+                            <td class="p-3 border-r border-slate-200">Konsep PCD, Piksel & Matriks Warna</td>
+                            <td class="p-3 border-r border-slate-200">Setup Colab, cv2.imread, BGR to RGB</td>
+                            <td class="p-3 font-medium text-slate-800">Pembentukan Kelompok & Penentuan Judul Proyek</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-semibold text-indigo-600 border-r border-slate-200">P2</td>
+                            <td class="p-3 border-r border-slate-200">Brightness, Contrast & Histogram Equalization</td>
+                            <td class="p-3 border-r border-slate-200">cv2.calcHist, cv2.equalizeHist</td>
+                            <td class="p-3 font-medium text-slate-800">Pengumpulan Dataset Citra Awal (50-100 sampel/kelas)</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-semibold text-indigo-600 border-r border-slate-200">P3</td>
+                            <td class="p-3 border-r border-slate-200">Spatial Filtering & Edge Detection</td>
+                            <td class="p-3 border-r border-slate-200">cv2.GaussianBlur, cv2.Canny</td>
+                            <td class="p-3 font-medium text-slate-800">Pembersihan Noise & Standarisasi Ukuran Citra Dataset</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-semibold text-indigo-600 border-r border-slate-200">P4</td>
+                            <td class="p-3 border-r border-slate-200">Segmentasi Citra & Otsu Thresholding</td>
+                            <td class="p-3 border-r border-slate-200">cv2.threshold, cv2.inRange (HSV)</td>
+                            <td class="p-3 font-medium text-slate-800">Pembuatan Masking Segmentasi Objek Proyek</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-semibold text-indigo-600 border-r border-slate-200">P5</td>
+                            <td class="p-3 border-r border-slate-200">Operasi Morfologi & Kontur Objek</td>
+                            <td class="p-3 border-r border-slate-200">cv2.morphologyEx, cv2.findContours</td>
+                            <td class="p-3 font-medium text-slate-800">Eksplorasi Bounding Box Objek Target Proyek</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-semibold text-indigo-600 border-r border-slate-200">P6</td>
+                            <td class="p-3 border-r border-slate-200">Ekstraksi Fitur Warna & Bentuk</td>
+                            <td class="p-3 border-r border-slate-200">Statistik HSV, Area, Perimeter, Aspect Ratio</td>
+                            <td class="p-3 font-medium text-slate-800">Ekstraksi Fitur Warna & Bentuk ke DataFrame Pandas</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-semibold text-indigo-600 border-r border-slate-200">P7</td>
+                            <td class="p-3 border-r border-slate-200">Ekstraksi Fitur Tekstur (GLCM)</td>
+                            <td class="p-3 border-r border-slate-200">skimage.feature.graycomatrix</td>
+                            <td class="p-3 font-medium text-slate-800">Finalisasi Dataset Fitur Lengkap (CSV Export)</td>
+                        </tr>
+                        <tr class="bg-amber-50">
+                            <td class="p-3 font-semibold text-amber-700 border-r border-slate-200">P8</td>
+                            <td class="p-3 font-semibold text-amber-900 border-r border-slate-200" colspan="2">Ujian Tengah Semester (UTS) / Progress Defense 1</td>
+                            <td class="p-3 font-bold text-amber-900">Presentasi Milestone 1-2 & Demo Code Pipeline</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-semibold text-indigo-600 border-r border-slate-200">P9-P11</td>
+                            <td class="p-3 border-r border-slate-200">Klasifikasi Machine Learning (KNN & SVM)</td>
+                            <td class="p-3 border-r border-slate-200">sklearn.neighbors, sklearn.svm</td>
+                            <td class="p-3 font-medium text-slate-800">Training & Hyperparameter Tuning Model Proyek</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-semibold text-indigo-600 border-r border-slate-200">P12-P13</td>
+                            <td class="p-3 border-r border-slate-200">Evaluasi Performa & Overview Deep Learning</td>
+                            <td class="p-3 border-r border-slate-200">sklearn.metrics.confusion_matrix</td>
+                            <td class="p-3 font-medium text-slate-800">Pengujian Model, Confusion Matrix & Analisis Error</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-semibold text-indigo-600 border-r border-slate-200">P14-P15</td>
+                            <td class="p-3 border-r border-slate-200">Integrasi Sistem & Penyusunan Makalah IEEE</td>
+                            <td class="p-3 border-r border-slate-200">Streamlit / Gradio Deployment Demo</td>
+                            <td class="p-3 font-medium text-slate-800">Penyusunan Paper Laporan Akhir & Demo Web App</td>
+                        </tr>
+                        <tr class="bg-emerald-50">
+                            <td class="p-3 font-semibold text-emerald-700 border-r border-slate-200">P16</td>
+                            <td class="p-3 font-semibold text-emerald-900 border-r border-slate-200" colspan="2">Ujian Akhir Semester (UAS) / Final Project Defense</td>
+                            <td class="p-3 font-bold text-emerald-900">Live Defense UAS, Penilaian Paper & Demo Sistem</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 4: ASESMEN & BEBAN BELAJAR + KALKULATOR -->
+    <section id="sec-asesmen" class="space-y-8 hidden">
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Chart 1: Bobot Penilaian -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3 flex flex-col items-center">
+                <h3 class="text-sm font-bold text-slate-900 text-center">Komposisi Bobot Penilaian Akhir</h3>
+                <p class="text-xs text-slate-500 text-center">Penilaian berbasis Project-Based Learning dengan akumulasi performa.</p>
+                <div class="chart-container mt-2">
+                    <canvas id="chart-grading"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 2: Distribusi Beban Belajar Minggu -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3 flex flex-col items-center">
+                <h3 class="text-sm font-bold text-slate-900 text-center">Estimasi Jam Beban Belajar Mahasiswa / Minggu</h3>
+                <p class="text-xs text-slate-500 text-center">Total 136 Jam (Tatap Muka, Praktikum Colab, & Mandiri PBL).</p>
+                <div class="chart-container mt-2">
+                    <canvas id="chart-workload"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grade Calculator Component -->
+        <div id="kalkulator" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-calculator text-emerald-600"></i>
+                        Simulator Kalkulator Nilai Akhir Mahasiswa
+                    </h3>
+                    <p class="text-xs text-slate-500">Masukkan estimasi nilai komponen untuk menghitung Nilai Akhir (NA) dan Konversi Huruf Mutu.</p>
+                </div>
+                <span id="grade-badge" class="px-4 py-1.5 rounded-full text-base font-extrabold bg-indigo-100 text-indigo-700">
+                    A (4.00)
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="space-y-1.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <label class="text-xs font-bold text-slate-700 block">Presensi & Keaktifan (10%)</label>
+                    <input type="number" id="score-presensi" value="95" min="0" max="100" oninput="calculateGrade()" class="w-full px-3 py-1.5 text-sm font-bold rounded-lg border border-slate-300 focus:outline-none focus:border-indigo-500">
+                    <p class="text-[10px] text-slate-400">Minimal 75% kehadiran untuk lulus</p>
+                </div>
+                <div class="space-y-1.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <label class="text-xs font-bold text-slate-700 block">Tugas & Lab Colab (20%)</label>
+                    <input type="number" id="score-tugas" value="88" min="0" max="100" oninput="calculateGrade()" class="w-full px-3 py-1.5 text-sm font-bold rounded-lg border border-slate-300 focus:outline-none focus:border-indigo-500">
+                    <p class="text-[10px] text-slate-400">Rata-rata tugas & notebook mingguan</p>
+                </div>
+                <div class="space-y-1.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <label class="text-xs font-bold text-slate-700 block">UTS / Milestone 1 (30%)</label>
+                    <input type="number" id="score-uts" value="85" min="0" max="100" oninput="calculateGrade()" class="w-full px-3 py-1.5 text-sm font-bold rounded-lg border border-slate-300 focus:outline-none focus:border-indigo-500">
+                    <p class="text-[10px] text-slate-400">Presentasi dataset & fitur ekstraksi</p>
+                </div>
+                <div class="space-y-1.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <label class="text-xs font-bold text-slate-700 block">UAS / Defense Project (40%)</label>
+                    <input type="number" id="score-uas" value="90" min="0" max="100" oninput="calculateGrade()" class="w-full px-3 py-1.5 text-sm font-bold rounded-lg border border-slate-300 focus:outline-none focus:border-indigo-500">
+                    <p class="text-[10px] text-slate-400">Model ML, Paper IEEE & Live Defense</p>
+                </div>
+            </div>
+
+            <div class="bg-indigo-50 p-4 rounded-xl flex items-center justify-between border border-indigo-100">
+                <div class="space-y-0.5">
+                    <div class="text-xs text-indigo-700 font-semibold">Hasil Perhitungan Nilai Akhir (NA):</div>
+                    <div id="score-total" class="text-2xl font-black text-indigo-900">88.90 / 100.00</div>
+                </div>
+                <div class="text-right">
+                    <div class="text-xs text-indigo-700 font-semibold">Status Kelulusan:</div>
+                    <div id="status-lulus" class="text-sm font-bold text-emerald-600 flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-check"></i> LULUS SANGAT MEMUASKAN
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- Footer -->
+<footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4">
+        <p class="font-semibold text-slate-700">Rencana Pembelajaran Semester (RPS) • Pengolahan Citra Digital</p>
+        <p class="mt-1">Disusun oleh Tim Dosen PCD berdasarkan Standard Kurikulum OBE & KKNI Sistem Informasi / Informatika.</p>
+    </div>
+</footer>
+
+<!-- Export Modal -->
+<div id="export-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-3xl p-6 flex flex-col max-h-[85vh] shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <i class="fa-solid fa-file-lines text-indigo-600"></i> Naskah Silabus RPS Lengkap (Format Ringkas Text/Markdown)
+            </h3>
+            <button onclick="closeExportModal()" class="text-slate-400 hover:text-slate-600 text-sm">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <textarea id="export-textarea" class="flex-1 w-full bg-slate-50 border border-slate-200 rounded-xl p-4 font-mono text-xs text-slate-700 focus:outline-none focus:border-indigo-500 min-h-[320px]" readonly></textarea>
+        <div class="flex items-center justify-between pt-4 border-t border-slate-100 mt-4">
+            <span id="copy-status" class="text-xs text-emerald-600 font-semibold opacity-0 transition">Berhasil disalin ke clipboard!</span>
+            <button onclick="copyToClipboard()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm">
+                <i class="fa-solid fa-copy"></i> Salin Semua Teks RPS
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Data Matriks P1 - P16
+    const rpsWeeksData = [
+        {
+            week: 1,
+            phase: "fase1",
+            cpmk: "CPMK 1",
+            cpmkBadge: "bg-indigo-100 text-indigo-700",
+            title: "Pengantar Pengolahan Citra Digital & Konsep Dasar Citra",
+            subtopics: "Visual Computing Spectrum (Graphics vs PCD vs Vision), Representasi Citra Matematis f(x,y), Koordinat Spasial, Matriks Piksel Grayscale & Model Warna RGB vs HSV.",
+            method: "Ceramah Interaktif, Diskusi Kelompok, & Demo Colab",
+            lab: "Setup Google Colab, cv2.imread(), cv2.cvtColor(), plt.imshow()",
+            projectTask: "Pembentukan kelompok proyek (3-4 mhs) & pemilihan tema domain (medis, pertanian, biometrik, otomotif).",
+            weight: "5%"
+        },
+        {
+            week: 2,
+            phase: "fase1",
+            cpmk: "CPMK 2",
+            cpmkBadge: "bg-sky-100 text-sky-700",
+            title: "Operasi Spasial, Brightness, Kontras & Histogram Equalization",
+            subtopics: "Operasi poin piksel, pergeseran intensitas (brightness adjustment), kontras stretching, analisis histogram citra, dan Histogram Equalization (HE).",
+            method: "Kuliah Teori & Practical Coding Laboratory",
+            lab: "cv2.calcHist(), cv2.equalizeHist(), Matplotlib Hist Plotting",
+            projectTask: "Pengumpulan dataset citra awal (50-100 sampel per kelas target) dari kamera HP atau dataset publik.",
+            weight: "5%"
+        },
+        {
+            week: 3,
+            phase: "fase1",
+            cpmk: "CPMK 2",
+            cpmkBadge: "bg-sky-100 text-sky-700",
+            title: "Filtering Spasial & Deteksi Tepi (Edge Detection)",
+            subtopics: "Konvolusi 2D, Low-pass filter (Mean, Gaussian Blur, Median Blur untuk noise removal), High-pass filter, Operator Sobel, Laplacian, & Canny Edge Detector.",
+            method: "Studi Kasus Filter & Coding Lab",
+            lab: "cv2.filter2D(), cv2.GaussianBlur(), cv2.Sobel(), cv2.Canny()",
+            projectTask: "Pembersihan noise dan standarisasi resolusi gambar pada dataset proyek kelompok.",
+            weight: "5%"
+        },
+        {
+            week: 4,
+            phase: "fase2",
+            cpmk: "CPMK 3",
+            cpmkBadge: "bg-emerald-100 text-emerald-700",
+            title: "Segmentasi Citra & Thresholding (Biner, Adaptif, Otsu)",
+            subtopics: "Konsep segmentasi objek dari background, Simple Thresholding, Adaptive Thresholding, Otsu Automatic Binarization, & Color Thresholding pada ruang warna HSV.",
+            method: "Problem-Based Learning & Lab Experiment",
+            lab: "cv2.threshold(cv2.THRESH_OTSU), cv2.inRange() untuk HSV Segmentasi",
+            projectTask: "Membuat masking segmentasi otomatis untuk mengisolasi objek utama pada dataset proyek.",
+            weight: "5%"
+        },
+        {
+            week: 5,
+            phase: "fase2",
+            cpmk: "CPMK 3",
+            cpmkBadge: "bg-emerald-100 text-emerald-700",
+            title: "Operasi Morfologi & Analisis Kontur Objek",
+            subtopics: "Structuring Element, Operasi Dilation, Erosion, Opening (menghilangkan noise kecil), Closing (menutup lubang), ekstraksi kontur & bounding box.",
+            method: "Praktikum Pemrograman & Diskusi",
+            lab: "cv2.morphologyEx(), cv2.findContours(), cv2.boundingRect()",
+            projectTask: "Penerapan operasi morfologi pada hasil masking segmentasi citra proyek.",
+            weight: "5%"
+        },
+        {
+            week: 6,
+            phase: "fase2",
+            cpmk: "CPMK 3",
+            cpmkBadge: "bg-emerald-100 text-emerald-700",
+            title: "Ekstraksi Fitur Warna & Bentuk (Color & Shape Features)",
+            subtopics: "Konsep ekstraksi fitur numerik. Fitur Warna: Mean, Std Dev, Color Histogram HSV. Fitur Bentuk: Area, Perimeter, Aspect Ratio, Solidity, Circularity.",
+            method: "Kuliah & Coding Lab Feature Engineering",
+            lab: "Ekstraksi statistik NumPy & kontur OpenCV ke Pandas DataFrame",
+            projectTask: "Ekstraksi fitur warna dan bentuk pada seluruh dataset proyek kelompok.",
+            weight: "5%"
+        },
+        {
+            week: 7,
+            phase: "fase2",
+            cpmk: "CPMK 3",
+            cpmkBadge: "bg-emerald-100 text-emerald-700",
+            title: "Ekstraksi Fitur Tekstur (Gray Level Co-occurrence Matrix / GLCM)",
+            subtopics: "Analisis tekstur citra, Matriks GLCM, Sudut orientasi (0°, 45°, 90°, 135°), dan ekstraksi properti tekstur: Contrast, Correlation, Energy, Homogeneity.",
+            method: "Studi Kasus Tekstur Citra & Lab",
+            lab: "skimage.feature.graycomatrix(), graycoprops()",
+            projectTask: "Penyusunan dataset fitur lengkap (Warna + Bentuk + Tekstur GLCM) dalam format CSV.",
+            weight: "10%"
+        },
+        {
+            week: 8,
+            phase: "uts",
+            cpmk: "CPMK 5",
+            cpmkBadge: "bg-amber-100 text-amber-800",
+            title: "EVALUASI TENGAH SEMESTER (UTS) - Project Milestone 1 Defense",
+            subtopics: "Presentasi progress proyek kelompok: Dataset Acquisition, Preprocessing Pipeline, Segmentasi Masking, dan Eksplorasi Matrix Fitur CSV.",
+            method: "Live Group Defense & QnA Dosen",
+            lab: "Demo Notebook Google Colab Pipeline",
+            projectTask: "Laporan Kemajuan Proyek Milestone 1 & Review Dosen.",
+            weight: "30%"
+        },
+        {
+            week: 9,
+            phase: "fase3",
+            cpmk: "CPMK 4",
+            cpmkBadge: "bg-purple-100 text-purple-700",
+            title: "Pengenalan Klasifikasi Citra & Data Partitioning",
+            subtopics: "Konsep Supervised Learning pada visual data, Pembagian data Train/Test Split, K-Fold Cross Validation, Normalisasi Fitur (MinMax/StandardScaler), Handling Class Imbalance.",
+            method: "Kuliah Teori Machine Learning & Lab",
+            lab: "sklearn.model_selection.train_test_split, StandardScaler",
+            projectTask: "Pembagian data train/test dan normalisasi fitur dataset proyek.",
+            weight: "5%"
+        },
+        {
+            week: 10,
+            phase: "fase3",
+            cpmk: "CPMK 4",
+            cpmkBadge: "bg-purple-100 text-purple-700",
+            title: "Klasifikasi Citra Berbasis K-Nearest Neighbors (KNN)",
+            subtopics: "Algoritma K-NN, Metric Jarak (Euclidean, Manhattan), Pemilihan Nilai K Optimal, Kelebihan & Kelemahan KNN pada fitur citra.",
+            method: "Hands-on Workshop & Coding Lab",
+            lab: "sklearn.neighbors.KNeighborsClassifier",
+            projectTask: "Pelatihan model KNN untuk klasifikasi citra proyek kelompok.",
+            weight: "5%"
+        },
+        {
+            week: 11,
+            phase: "fase3",
+            cpmk: "CPMK 4",
+            cpmkBadge: "bg-purple-100 text-purple-700",
+            title: "Klasifikasi Citra Berbasis Support Vector Machine (SVM)",
+            subtopics: "Prinsip Hyperplane & Margin SVM, Kernel Trick (Linear, RBF, Polynomial), Hyperparameter Tuning (C & Gamma) untuk klasifikasi non-linear.",
+            method: "Kuliah & Praktikum Tuning Model",
+            lab: "sklearn.svm.SVC, sklearn.model_selection.GridSearchCV",
+            projectTask: "Pelatihan model SVM & perbandingan performa awal terhadap KNN.",
+            weight: "5%"
+        },
+        {
+            week: 12,
+            phase: "fase3",
+            cpmk: "CPMK 4",
+            cpmkBadge: "bg-purple-100 text-purple-700",
+            title: "Evaluasi Performa Model & Confusion Matrix Analysis",
+            subtopics: "Confusion Matrix (TP, TN, FP, FN), Pengukuran Akurasi, Precision, Recall, F1-Score, ROC-AUC Curve, & Analisis Misklasifikasi Objek Citra.",
+            method: "Analisis Data Evaluasi & Lab",
+            lab: "sklearn.metrics.confusion_matrix, classification_report",
+            projectTask: "Evaluasi lengkap performa model proyek & identifikasi kesalahan klasifikasi.",
+            weight: "5%"
+        },
+        {
+            week: 13,
+            phase: "fase3",
+            cpmk: "CPMK 1",
+            cpmkBadge: "bg-indigo-100 text-indigo-700",
+            title: "Overview Deep Learning & Convolutional Neural Networks (CNN)",
+            subtopics: "Perbandingan Feature Engineering Tradisional vs Feature Learning CNN, Arsitektur Dasar CNN (Convolution Layer, ReLU, Pooling Layer, Fully Connected).",
+            method: "Kuliah Wawasan Perkembangan PCD Modern",
+            lab: "Visualisasi Kernel Konvolusi Deep Learning & Demo Pretrained Model",
+            projectTask: "Studi literatur perbandingan pendekatan tradisional vs CNN.",
+            weight: "5%"
+        },
+        {
+            week: 14,
+            phase: "fase4",
+            cpmk: "CPMK 5",
+            cpmkBadge: "bg-emerald-100 text-emerald-700",
+            title: "Integrasi Sistem PCD & Deployment Web Sederhana",
+            subtopics: "Membangun antarmuka sederhana untuk inferensi citra baru, upload gambar, preprocessing otomatis, & prediksi kelas secara real-time.",
+            method: "Workshop Integration & Live Demo Build",
+            lab: "Streamlit / Gradio Web App Integration untuk Model PCD",
+            projectTask: "Pembuatan aplikasi web demo interaktif proyek kelompok.",
+            weight: "5%"
+        },
+        {
+            week: 15,
+            phase: "fase4",
+            cpmk: "CPMK 5",
+            cpmkBadge: "bg-emerald-100 text-emerald-700",
+            title: "Penyusunan Makalah Ilmiah (Paper IEEE Format) & Review Proyek",
+            subtopics: "Teknik penulisan makalah ilmiah hasil eksperimen PCD (Abstrak, Pendahuluan, Metodologi Pipeline, Hasil & Pembahasan, Kesimpulan).",
+            method: "Coaching Penulisan Paper & QnA Review",
+            lab: "Finalizing Code Repository & Draft Paper IEEE",
+            projectTask: "Finalisasi Draft Paper Laporan Akhir Proyek Kelompok.",
+            weight: "5%"
+        },
+        {
+            week: 16,
+            phase: "fase4",
+            cpmk: "CPMK 5",
+            cpmkBadge: "bg-emerald-100 text-emerald-700",
+            title: "EVALUASI AKHIR SEMESTER (UAS) - Final Project Live Defense",
+            subtopics: "Presentasi Akhir Proyek Kelompok, Demo Aplikasi Web Inferensi Citra, Pengujian Lisan Individu oleh Pengampu, & Penilaian Paper Akhir.",
+            method: "Live Defense UAS & Demo Exhibition",
+            lab: "Live Test Inferensi Citra Sampel Baru oleh Dosen",
+            projectTask: "Penyerahan Laporan Paper Akhir, Link Repository GitHub, & Presentation Slide.",
+            weight: "40%"
+        }
+    ];
+
+    let currentPhaseFilter = 'all';
+
+    // Render Weekly Syllabus
+    function renderWeeks() {
+        const container = document.getElementById('weeks-container');
+        const searchTerm = document.getElementById('search-input').value.toLowerCase();
+        container.innerHTML = '';
+
+        const filtered = rpsWeeksData.filter(item => {
+            const matchPhase = currentPhaseFilter === 'all' || item.phase === currentPhaseFilter;
+            const matchSearch = item.title.toLowerCase().includes(searchTerm) || 
+                                item.subtopics.toLowerCase().includes(searchTerm) ||
+                                item.lab.toLowerCase().includes(searchTerm);
+            return matchPhase && matchSearch;
+        });
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="bg-white p-8 rounded-2xl text-center border border-slate-200">
+                    <i class="fa-solid fa-folder-open text-3xl text-slate-300 mb-2"></i>
+                    <p class="text-xs text-slate-500 font-semibold">Tidak ditemukan minggu atau materi yang sesuai pencarian.</p>
+                </div>
+            `;
+            return;
+        }
+
+        filtered.forEach(item => {
+            const isExam = item.week === 8 || item.week === 16;
+            const cardBg = isExam ? (item.week === 8 ? 'bg-amber-50/70 border-amber-300' : 'bg-emerald-50/70 border-emerald-300') : 'bg-white border-slate-200';
+            
+            const card = document.createElement('div');
+            card.className = `p-5 rounded-2xl border shadow-sm space-y-3 transition hover:shadow-md ${cardBg}`;
+            card.innerHTML = `
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-8 h-8 rounded-lg bg-indigo-600 text-white font-black text-xs flex items-center justify-center shadow-sm">
+                            P${item.week}
+                        </span>
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-900">${item.title}</h4>
+                            <span class="text-[10px] text-slate-400 font-medium">Minggu ke-${item.week} • Bobot Asesmen: ${item.weight}</span>
+                        </div>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${item.cpmkBadge}">
+                        ${item.cpmk}
+                    </span>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-4 text-xs">
+                    <div class="space-y-1">
+                        <span class="font-bold text-slate-700 block flex items-center gap-1">
+                            <i class="fa-solid fa-book-open text-indigo-500"></i> Pokok Bahasan Teori:
+                        </span>
+                        <p class="text-slate-600 leading-relaxed">${item.subtopics}</p>
+                    </div>
+                    <div class="space-y-1">
+                        <span class="font-bold text-slate-700 block flex items-center gap-1">
+                            <i class="fa-solid fa-laptop-code text-sky-500"></i> Praktikum Colab / Lab:
+                        </span>
+                        <p class="text-slate-600 font-mono text-[11px] bg-slate-50 p-2 rounded border border-slate-100">${item.lab}</p>
+                    </div>
+                    <div class="space-y-1">
+                        <span class="font-bold text-slate-700 block flex items-center gap-1">
+                            <i class="fa-solid fa-list-check text-emerald-500"></i> Tugas / Milestone Proyek:
+                        </span>
+                        <p class="text-slate-600 leading-relaxed">${item.projectTask}</p>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function setPhaseFilter(phase) {
+        currentPhaseFilter = phase;
+        document.querySelectorAll('.phase-btn').forEach(btn => {
+            if (btn.getAttribute('data-phase') === phase) {
+                btn.className = 'phase-btn px-3 py-1 rounded-full bg-indigo-600 text-white font-medium shadow-sm';
+            } else {
+                btn.className = 'phase-btn px-3 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium';
+            }
+        });
+        renderWeeks();
+    }
+
+    function filterWeeks() {
+        renderWeeks();
+    }
+
+    // Navigation Tabs Switcher
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`tab-${tabId}`).classList.add('active');
+
+        document.getElementById('sec-ringkasan').classList.add('hidden');
+        document.getElementById('sec-matriks').classList.add('hidden');
+        document.getElementById('sec-pbl-map').classList.add('hidden');
+        document.getElementById('sec-asesmen').classList.add('hidden');
+
+        document.getElementById(`sec-${tabId}`).classList.remove('hidden');
+    }
+
+    function scrollToSection(id) {
+        switchTab('asesmen');
+        setTimeout(() => {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+    }
+
+    // Grade Simulator Calculation
+    function calculateGrade() {
+        const p = parseFloat(document.getElementById('score-presensi').value) || 0;
+        const t = parseFloat(document.getElementById('score-tugas').value) || 0;
+        const uts = parseFloat(document.getElementById('score-uts').value) || 0;
+        const uas = parseFloat(document.getElementById('score-uas').value) || 0;
+
+        const total = (p * 0.10) + (t * 0.20) + (uts * 0.30) + (uas * 0.40);
+        document.getElementById('score-total').textContent = `${total.toFixed(2)} / 100.00`;
+
+        const gradeBadge = document.getElementById('grade-badge');
+        const statusLulus = document.getElementById('status-lulus');
+
+        if (total >= 85) {
+            gradeBadge.textContent = "A (4.00)";
+            gradeBadge.className = "px-4 py-1.5 rounded-full text-base font-extrabold bg-emerald-100 text-emerald-800";
+            statusLulus.innerHTML = `<i class="fa-solid fa-circle-check"></i> LULUS SANGAT MEMUASKAN`;
+            statusLulus.className = "text-sm font-bold text-emerald-600 flex items-center gap-1.5";
+        } else if (total >= 75) {
+            gradeBadge.textContent = "B+ (3.50)";
+            gradeBadge.className = "px-4 py-1.5 rounded-full text-base font-extrabold bg-indigo-100 text-indigo-800";
+            statusLulus.innerHTML = `<i class="fa-solid fa-circle-check"></i> LULUS MEMUASKAN`;
+            statusLulus.className = "text-sm font-bold text-indigo-600 flex items-center gap-1.5";
+        } else if (total >= 70) {
+            gradeBadge.textContent = "B (3.00)";
+            gradeBadge.className = "px-4 py-1.5 rounded-full text-base font-extrabold bg-sky-100 text-sky-800";
+            statusLulus.innerHTML = `<i class="fa-solid fa-circle-check"></i> LULUS BAIK`;
+            statusLulus.className = "text-sm font-bold text-sky-600 flex items-center gap-1.5";
+        } else if (total >= 60) {
+            gradeBadge.textContent = "C+ (2.50)";
+            gradeBadge.className = "px-4 py-1.5 rounded-full text-base font-extrabold bg-amber-100 text-amber-800";
+            statusLulus.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> LULUS CUKUP`;
+            statusLulus.className = "text-sm font-bold text-amber-600 flex items-center gap-1.5";
+        } else {
+            gradeBadge.textContent = "D / E (< 60)";
+            gradeBadge.className = "px-4 py-1.5 rounded-full text-base font-extrabold bg-rose-100 text-rose-800";
+            statusLulus.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> TIDAK LULUS / REMEDIAL`;
+            statusLulus.className = "text-sm font-bold text-rose-600 flex items-center gap-1.5";
+        }
+    }
+
+    // Chart.js Setup
+    function initCharts() {
+        // Donut Chart: Grading Breakdown
+        const ctxGrading = document.getElementById('chart-grading').getContext('2d');
+        new Chart(ctxGrading, {
+            type: 'doughnut',
+            data: {
+                labels: ['Presensi (10%)', 'Tugas & Lab (20%)', 'UTS / Milestone 1 (30%)', 'UAS / Defense Project (40%)'],
+                datasets: [{
+                    data: [10, 20, 30, 40],
+                    backgroundColor: ['#6366f1', '#0EA5E9', '#F59E0B', '#10B981'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 12, font: { size: 10 } }
+                    }
+                }
+            }
+        });
+
+        // Bar Chart: Workload per Week
+        const ctxWorkload = document.getElementById('chart-workload').getContext('2d');
+        new Chart(ctxWorkload, {
+            type: 'bar',
+            data: {
+                labels: ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'UTS', 'P9', 'P10', 'P11', 'P12', 'P13', 'P14', 'P15', 'UAS'],
+                datasets: [{
+                    label: 'Estimasi Jam Beban/Minggu',
+                    data: [8, 8, 8, 9, 9, 9, 10, 12, 8, 9, 9, 9, 8, 10, 10, 12],
+                    backgroundColor: '#4f46e5',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+                    x: { ticks: { font: { size: 10 } } }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    // Modal Export Text Setup
+    function openExportModal() {
+        let text = "RENCANA PEMBELAJARAN SEMESTER (RPS)\nMATA KULIAH: PENGOLAHAN CITRA DIGITAL (3 SKS)\n======================================================\n\n";
+        text += "1. CAPAIAN PEMBELAJARAN (CPMK):\n";
+        text += "• CPMK 1: Memahami konsep visual computing & matriks piksel.\n";
+        text += "• CPMK 2: Menguasai preprocessing citra (kontras, histogram, filtering, Canny).\n";
+        text += "• CPMK 3: Menerapkan segmentasi Otsu & ekstraksi fitur (warna, bentuk, GLCM).\n";
+        text += "• CPMK 4: Membangun model klasifikasi ML (KNN, SVM) & evaluasi confusion matrix.\n";
+        text += "• CPMK 5: Menyusun paper laporan ilmiah IEEE & melakukan live defense proyek.\n\n";
+        text += "2. MATRIKS PERTEMUAN MINGGUAN (P1 - P16):\n\n";
+
+        rpsWeeksData.forEach(w => {
+            text += `[P${w.week}] ${w.title} (${w.cpmk})\n`;
+            text += `   - Teori: ${w.subtopics}\n`;
+            text += `   - Lab: ${w.lab}\n`;
+            text += `   - Proyek: ${w.projectTask}\n\n`;
+        });
+
+        document.getElementById('export-textarea').value = text;
+        document.getElementById('export-modal').classList.remove('hidden');
+    }
+
+    function closeExportModal() {
+        document.getElementById('export-modal').classList.add('hidden');
+    }
+
+    function copyToClipboard() {
+        const textarea = document.getElementById('export-textarea');
+        textarea.select();
+        document.execCommand('copy');
+        
+        const status = document.getElementById('copy-status');
+        status.classList.remove('opacity-0');
+        setTimeout(() => {
+            status.classList.add('opacity-0');
+        }, 2000);
+    }
+
+    // Init
+    window.addEventListener('DOMContentLoaded', () => {
+        renderWeeks();
+        initCharts();
+        calculateGrade();
+    });
+</script>
+</body>
+</html>
