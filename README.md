@@ -1,2 +1,2 @@
-# cloud-computing-hub
-Portal Utama Tugas Mata Kuliah Cloud Computing
+# RPS-Matakuliah-hub
+Portal Utama RPS Karunia Suci Lestari
